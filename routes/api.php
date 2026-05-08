@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 | ESP32 must send X-API-Key header with every request.
 |
 */
-
+ 
 Route::middleware(['api.key', 'throttle:esp'])->group(function () {
     // Get active schedule
     Route::get('/jadwal/active', [JadwalController::class, 'getActive']);
