@@ -102,7 +102,7 @@
                         <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                             <div class="flex items-center justify-between">
                                 <div class="flex-1">
-                                    <p class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $device->device_id }}</p>
+                                    <p class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $device->name }}</p>
                                     <div class="mt-1 flex items-center gap-2">
                                         <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $device->mode === 'auto' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' }}">
                                             {{ ucfirst($device->mode) }}
@@ -115,22 +115,18 @@
                                     </div>
                                 </div>
 
-                                @if($device->mode === 'manual')
-                                    <form action="{{ route('device.toggle', $device) }}" method="POST">
-                                        @csrf
-                                        <label class="relative inline-flex cursor-pointer items-center">
-                                            <input
-                                                type="checkbox"
-                                                class="peer sr-only"
-                                                {{ $device->manual_on ? 'checked' : '' }}
-                                                onchange="this.form.submit()"
-                                            >
-                                            <div class="peer h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-zinc-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:border-zinc-600 dark:bg-zinc-700 dark:peer-focus:ring-green-800"></div>
-                                        </label>
-                                    </form>
-                                @else
-                                    <span class="text-xs text-zinc-500 dark:text-zinc-500">Mode Auto</span>
-                                @endif
+                                <form action="{{ route('device.toggle', $device) }}" method="POST">
+                                    @csrf
+                                    <label class="relative inline-flex cursor-pointer items-center">
+                                        <input
+                                            type="checkbox"
+                                            class="peer sr-only"
+                                            {{ $device->is_active ? 'checked' : '' }}
+                                            onchange="this.form.submit()"
+                                        >
+                                        <div class="peer h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-zinc-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:border-zinc-600 dark:bg-zinc-700 dark:peer-focus:ring-green-800"></div>
+                                    </label>
+                                </form>
                             </div>
                         </div>
                     @empty

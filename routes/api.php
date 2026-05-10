@@ -13,7 +13,17 @@ use Illuminate\Support\Facades\Route;
 | ESP32 must send X-API-Key header with every request.
 |
 */
- 
+
+// Public API routes (for web dashboard or authenticated users)
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Jadwal API routes
+    Route::apiResource('jadwal', JadwalController::class)->except(['destroy']);
+
+    // Device Control API routes
+    Route::apiResource('device-control', DeviceControlController::class)->except(['destroy']);
+});
+
+// ESP32 API routes (protected with API key)
 Route::middleware(['api.key', 'throttle:esp'])->group(function () {
     // Get active schedule
     Route::get('/jadwal/active', [JadwalController::class, 'getActive']);

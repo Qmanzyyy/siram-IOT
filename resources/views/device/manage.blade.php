@@ -1,17 +1,8 @@
-<x-layouts::app title="Kelola Device">
-    <div class="mx-auto max-w-7xl space-y-6">
-        <!-- Header Section -->
-        <div class="flex items-center justify-between">
-            <div>
-                <flux:heading size="xl">Kelola Device Control</flux:heading>
-                <flux:subheading class="mt-1">Atur device IoT untuk sistem penyiraman otomatis</flux:subheading>
-            </div>
-            <flux:button type="button" variant="primary" onclick="resetForm()">
-                <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
-                Tambah Device Baru
-            </flux:button>
+<x-layouts::app :title="__('Kelola Device')">
+    <div class="flex flex-col gap-6">
+        <div>
+            <flux:heading size="xl">{{ __('Kelola Device') }}</flux:heading>
+            <flux:subheading>{{ __('Konfigurasi dan kontrol device IoT Smart Farm') }}</flux:subheading>
         </div>
 
         <!-- Alert Messages -->
@@ -26,284 +17,276 @@
             </flux:card>
         @endif
 
-        @if ($errors->any())
+        @if (session('error'))
             <flux:card class="border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20">
-                <div class="flex gap-3">
-                    <svg class="h-6 w-6 flex-shrink-0 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-3">
+                    <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <div class="flex-1">
-                        <p class="font-medium text-red-800 dark:text-red-400">Terdapat kesalahan:</p>
-                        <ul class="mt-2 list-disc pl-5 text-sm text-red-700 dark:text-red-300">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
+                    <p class="font-medium text-red-800 dark:text-red-400">{{ session('error') }}</p>
                 </div>
             </flux:card>
         @endif
 
-        <div class="grid gap-6 lg:grid-cols-3">
-            <!-- Device List Sidebar -->
-            <div class="lg:col-span-1">
-                <flux:card>
-                    <flux:heading size="lg">Daftar Device</flux:heading>
-                    <flux:subheading class="mt-1">Klik untuk edit</flux:subheading>
-
-                    <div class="mt-4 space-y-2">
-                        @forelse ($deviceList as $device)
-                            <button
-                                type="button"
-                                onclick="loadDevice({{ $device->id }})"
-                                class="w-full rounded-lg border border-zinc-200 p-4 text-left transition hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:border-zinc-500 dark:hover:bg-zinc-800"
-                            >
-                                <div class="flex-1">
-                                    <p class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $device->device_id }}</p>
-                                    <div class="mt-2 flex items-center gap-2">
-                                        <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium {{ $device->mode === 'auto' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' }}">
-                                            {{ ucfirst($device->mode) }}
-                                        </span>
-                                        @if($device->mode === 'manual')
-                                            <span class="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium {{ $device->manual_on ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-400' }}">
-                                                {{ $device->manual_on ? 'ON' : 'OFF' }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                    @if($device->last_heartbeat)
-                                        <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
-                                            Last seen: {{ $device->last_heartbeat->diffForHumans() }}
-                                        </p>
-                                    @endif
-                                </div>
-                            </button>
-                        @empty
-                            <div class="rounded-lg border border-dashed border-zinc-300 p-8 text-center dark:border-zinc-700">
-                                <svg class="mx-auto h-12 w-12 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                </svg>
-                                <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Belum ada device</p>
-                                <p class="mt-1 text-xs text-zinc-500">Klik "Tambah Device Baru" untuk memulai</p>
+        <!-- Device Cards Grid -->
+        <div class="grid gap-6 md:grid-cols-2">
+            @foreach($devices as $device)
+                <div class="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+                    <!-- Device Header -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-12 w-12 items-center justify-center rounded-lg
+                                {{ $device->isMotor() ? 'bg-blue-100 dark:bg-blue-900/30' : '' }}
+                                {{ $device->isRelay() ? 'bg-green-100 dark:bg-green-900/30' : '' }}
+                                {{ $device->isServo() ? 'bg-purple-100 dark:bg-purple-900/30' : '' }}">
+                                @if($device->isMotor())
+                                    <svg class="h-6 w-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                @elseif($device->isRelay())
+                                    <svg class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                                    </svg>
+                                @else
+                                    <svg class="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
+                                @endif
                             </div>
-                        @endforelse
-                    </div>
-                </flux:card>
-            </div>
-
-            <!-- Form Section -->
-            <div class="lg:col-span-2">
-                <flux:card>
-                    <flux:heading size="lg" id="form-title">Tambah Device Baru</flux:heading>
-                    <flux:subheading class="mt-1">Isi form di bawah untuk membuat atau mengubah device</flux:subheading>
-
-                    <form action="{{ route('device.upsert') }}" method="POST" id="device-form" class="mt-6 space-y-6">
-                        @csrf
-                        <input type="hidden" name="id" id="device-id" value="{{ old('id') }}">
-
-                        <flux:input
-                            name="device_id"
-                            id="device_id"
-                            label="Device ID"
-                            placeholder="Contoh: pompa_01, pompa_02"
-                            value="{{ old('device_id') }}"
-                            required
-                        />
-
-                        <!-- Mode Selection -->
-                        <div class="space-y-3">
-                            <label class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Mode Operasi</label>
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <label class="flex items-center gap-3 rounded-lg border border-zinc-200 p-4 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800">
-                                    <input type="radio" name="mode" id="mode-auto" value="auto" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" {{ old('mode', 'auto') === 'auto' ? 'checked' : '' }} required>
-                                    <div>
-                                        <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Auto</span>
-                                        <p class="text-xs text-zinc-500">Mengikuti jadwal</p>
-                                    </div>
-                                </label>
-                                <label class="flex items-center gap-3 rounded-lg border border-zinc-200 p-4 cursor-pointer hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800">
-                                    <input type="radio" name="mode" id="mode-manual" value="manual" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" {{ old('mode') === 'manual' ? 'checked' : '' }} required>
-                                    <div>
-                                        <span class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Manual</span>
-                                        <p class="text-xs text-zinc-500">Kontrol manual</p>
-                                    </div>
-                                </label>
+                            <div>
+                                <flux:heading size="lg">{{ $device->name }}</flux:heading>
+                                <flux:subheading class="text-sm">
+                                    <flux:badge :variant="$device->mode === 'auto' ? 'info' : 'warning'" size="sm">
+                                        {{ ucfirst($device->mode) }}
+                                    </flux:badge>
+                                </flux:subheading>
                             </div>
                         </div>
 
-                        <!-- Manual ON/OFF Switch -->
-                        <div id="manual-control" class="hidden rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-                            <div class="flex items-center justify-between">
+                        <!-- Toggle Active -->
+                        <form action="{{ route('device.toggle', $device) }}" method="POST" class="inline">
+                            @csrf
+                            <label class="relative inline-flex cursor-pointer items-center">
+                                <input
+                                    type="checkbox"
+                                    class="peer sr-only"
+                                    {{ $device->is_active ? 'checked' : '' }}
+                                    onchange="this.form.submit()"
+                                >
+                                <div class="peer h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-zinc-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:border-zinc-600 dark:bg-zinc-700 dark:peer-focus:ring-green-800"></div>
+                            </label>
+                        </form>
+                    </div>
+
+                    <!-- Device Info -->
+                    <div class="space-y-3 mb-4">
+                        @if($device->isMotor())
+                            <!-- Motor Info -->
+                            <div class="flex justify-between items-center">
+                                <flux:subheading class="text-sm">Kecepatan (PWM)</flux:subheading>
+                                <flux:badge>{{ $device->speed ?? 0 }}</flux:badge>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <flux:subheading class="text-sm">Posisi</flux:subheading>
+                                <flux:badge>{{ number_format($device->calibration_percentage, 1) }}%</flux:badge>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <flux:subheading class="text-sm">Max Steps</flux:subheading>
+                                <flux:badge>{{ $device->calibration_max_steps ?? 0 }}</flux:badge>
+                            </div>
+                        @elseif($device->isRelay())
+                            <!-- Relay Info -->
+                            <div class="flex justify-between items-center">
+                                <flux:subheading class="text-sm">Status Pompa</flux:subheading>
+                                <flux:badge :variant="$device->relay_state ? 'success' : 'default'">
+                                    {{ $device->relay_state ? 'ON' : 'OFF' }}
+                                </flux:badge>
+                            </div>
+                        @elseif($device->isServo())
+                            <!-- Servo Info -->
+                            <div class="flex justify-between items-center">
+                                <flux:subheading class="text-sm">Sudut Nozzle</flux:subheading>
+                                <flux:badge>{{ $device->servo_angle ?? 90 }}°</flux:badge>
+                            </div>
+                        @endif
+
+                        @if($device->last_heartbeat)
+                            <div class="flex justify-between items-center">
+                                <flux:subheading class="text-sm">Last Heartbeat</flux:subheading>
+                                <flux:badge size="sm" variant="default">
+                                    {{ $device->last_heartbeat->diffForHumans() }}
+                                </flux:badge>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2">
+                        <flux:modal.trigger name="config-{{ $device->id }}">
+                            <flux:button size="sm" variant="ghost" class="flex-1">
+                                <flux:icon.cog-6-tooth class="size-4" />
+                                Konfigurasi
+                            </flux:button>
+                        </flux:modal.trigger>
+
+                        @if($device->isMotor())
+                            <flux:modal.trigger name="calibration-{{ $device->id }}">
+                                <flux:button size="sm" variant="ghost">
+                                    <flux:icon.adjustments-horizontal class="size-4" />
+                                    Kalibrasi
+                                </flux:button>
+                            </flux:modal.trigger>
+                        @endif
+                    </div>
+
+                    <!-- Configuration Modal -->
+                    <flux:modal name="config-{{ $device->id }}" class="space-y-6">
+                        <form action="{{ route('device.update', $device) }}" method="POST" class="space-y-6">
+                            @csrf
+                            @method('PUT')
+
+                            <div>
+                                <flux:heading size="lg">Konfigurasi {{ $device->name }}</flux:heading>
+                                <flux:subheading>Atur parameter operasional device</flux:subheading>
+                            </div>
+
+                            <!-- Mode Selection -->
+                            <flux:radio.group name="mode" label="Mode Operasi">
+                                <flux:radio value="manual" label="Manual" description="Kontrol manual melalui dashboard" :checked="$device->mode === 'manual'" />
+                                <flux:radio value="auto" label="Otomatis" description="Mengikuti jadwal yang telah diatur" :checked="$device->mode === 'auto'" />
+                            </flux:radio.group>
+
+                            @if($device->isMotor())
+                                <!-- Motor Speed -->
+                                <flux:input
+                                    name="speed"
+                                    label="Kecepatan Motor (PWM)"
+                                    type="number"
+                                    min="0"
+                                    max="255"
+                                    :value="$device->speed"
+                                    description="Nilai 0-255 untuk mengatur kecepatan putaran motor"
+                                />
+
+                                <!-- Position Slider -->
+                                <flux:field>
+                                    <flux:label>Posisi Target (%)</flux:label>
+                                    <flux:description>Geser untuk mengatur posisi target device</flux:description>
+                                    <input
+                                        type="range"
+                                        name="calibration_percentage"
+                                        min="0"
+                                        max="100"
+                                        step="0.1"
+                                        value="{{ $device->calibration_percentage }}"
+                                        class="w-full h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer dark:bg-zinc-700"
+                                        oninput="this.nextElementSibling.querySelector('span').textContent = parseFloat(this.value).toFixed(1)"
+                                    />
+                                    <div class="flex justify-between text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                                        <span>0%</span>
+                                        <span class="font-medium"><span>{{ number_format($device->calibration_percentage, 1) }}</span>%</span>
+                                        <span>100%</span>
+                                    </div>
+                                </flux:field>
+                            @elseif($device->isRelay())
+                                <!-- Relay State -->
+                                <flux:switch
+                                    name="relay_state"
+                                    label="Status Pompa"
+                                    description="Aktifkan untuk menyalakan pompa"
+                                    :checked="$device->relay_state"
+                                />
+                            @elseif($device->isServo())
+                                <!-- Servo Angle -->
+                                <flux:field>
+                                    <flux:label>Sudut Servo (°)</flux:label>
+                                    <flux:description>Atur sudut nozzle (0-180 derajat)</flux:description>
+                                    <input
+                                        type="range"
+                                        name="servo_angle"
+                                        min="0"
+                                        max="180"
+                                        step="1"
+                                        value="{{ $device->servo_angle }}"
+                                        class="w-full h-2 bg-zinc-200 rounded-lg appearance-none cursor-pointer dark:bg-zinc-700"
+                                        oninput="this.nextElementSibling.querySelector('span').textContent = this.value"
+                                    />
+                                    <div class="flex justify-between text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                                        <span>0°</span>
+                                        <span class="font-medium"><span>{{ $device->servo_angle }}</span>°</span>
+                                        <span>180°</span>
+                                    </div>
+                                </flux:field>
+                            @endif
+
+                            <div class="flex gap-2 justify-end">
+                                <flux:modal.close>
+                                    <flux:button type="button" variant="ghost">Batal</flux:button>
+                                </flux:modal.close>
+                                <flux:button type="submit" variant="primary">Simpan Konfigurasi</flux:button>
+                            </div>
+                        </form>
+                    </flux:modal>
+
+                    <!-- Calibration Modal -->
+                    @if($device->isMotor())
+                        <flux:modal name="calibration-{{ $device->id }}" class="space-y-6">
+                            <div>
+                                <flux:heading size="lg">Kalibrasi {{ $device->name }}</flux:heading>
+                                <flux:subheading>Tentukan batas maksimal pergerakan device</flux:subheading>
+                            </div>
+
+                            <flux:card>
+                                <div class="space-y-4">
+                                    <flux:heading size="sm">Langkah Kalibrasi:</flux:heading>
+                                    <ol class="list-decimal list-inside space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                                        <li>Klik tombol "Mulai Kalibrasi" untuk reset posisi</li>
+                                        <li>Jalankan device hingga mencapai titik maksimal</li>
+                                        <li>Catat posisi saat push button tertekan</li>
+                                        <li>Masukkan persentase posisi dan simpan</li>
+                                    </ol>
+                                </div>
+                            </flux:card>
+
+                            <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="manual_on" class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Status Pompa</label>
-                                    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Nyalakan atau matikan pompa secara manual</p>
+                                    <flux:subheading class="text-sm mb-1">Posisi Saat Ini</flux:subheading>
+                                    <flux:badge size="lg">{{ $device->current_position }} steps</flux:badge>
                                 </div>
-                                <label class="relative inline-flex cursor-pointer items-center">
-                                    <input type="checkbox" name="manual_on" id="manual_on" class="peer sr-only" {{ old('manual_on') ? 'checked' : '' }}>
-                                    <div class="peer h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-zinc-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-green-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:border-zinc-600 dark:bg-zinc-700 dark:peer-focus:ring-green-800"></div>
-                                </label>
+                                <div>
+                                    <flux:subheading class="text-sm mb-1">Max Steps</flux:subheading>
+                                    <flux:badge size="lg">{{ $device->calibration_max_steps ?? 0 }} steps</flux:badge>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="flex gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
-                            <button type="submit" class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Simpan Device
-                            </button>
-                            <button type="button" onclick="resetForm()" class="flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                                </svg>
-                                Reset Form
-                            </button>
-                        </div>
+                            <form action="{{ route('device.calibration.save', $device) }}" method="POST" class="space-y-4">
+                                @csrf
+                                <flux:input
+                                    name="calibration_percentage"
+                                    label="Persentase Posisi Saat Ini"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
+                                    :value="$device->calibration_percentage"
+                                    description="Masukkan persentase posisi device saat ini (0-100%)"
+                                />
 
-                        <!-- Delete Button -->
-                        <div id="delete-section" class="hidden border-t border-zinc-200 pt-4 dark:border-zinc-700">
-                            <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">Hapus device ini secara permanen</p>
-                            <button type="button" onclick="showDeleteModal()" class="flex items-center justify-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:border-red-800 dark:bg-zinc-900 dark:text-red-400 dark:hover:bg-red-900/20">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                Hapus Device
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Hidden delete form -->
-                    <form id="delete-form" method="POST" style="display: none;">
-                        @csrf
-                        @method('DELETE')
-                    </form>
-                </flux:card>
-            </div>
-        </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div class="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900">
-                <div class="flex items-start gap-4">
-                    <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-                        <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                    </div>
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Hapus Device</h3>
-                        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                            Yakin ingin menghapus device "<span id="modal-device-id" class="font-semibold"></span>"?
-                        </p>
-                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">
-                            Tindakan ini tidak dapat dibatalkan.
-                        </p>
-                    </div>
+                                <div class="flex gap-2 justify-end">
+                                    <flux:modal.close>
+                                        <flux:button type="button" variant="ghost">Tutup</flux:button>
+                                    </flux:modal.close>
+                                    <form action="{{ route('device.calibration.start', $device) }}" method="POST" class="inline">
+                                        @csrf
+                                        <flux:button type="submit" variant="outline">Mulai Kalibrasi</flux:button>
+                                    </form>
+                                    <flux:button type="submit" variant="primary">Simpan Kalibrasi</flux:button>
+                                </div>
+                            </form>
+                        </flux:modal>
+                    @endif
                 </div>
-                <div class="mt-6 flex gap-3">
-                    <button type="button" onclick="hideDeleteModal()" class="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700">
-                        Batal
-                    </button>
-                    <button type="button" onclick="confirmDelete()" class="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                        </svg>
-                        Ya, Hapus
-                    </button>
-                </div>
-            </div>
+            @endforeach
         </div>
     </div>
-
-    <script>
-        function loadDevice(id) {
-            if (!id) {
-                resetForm();
-                return;
-            }
-
-            fetch(`/device-control/${id}`)
-                .then(res => res.json())
-                .then(data => {
-                    const device = data.data;
-                    document.getElementById('form-title').textContent = 'Edit Device: ' + device.device_id;
-                    document.getElementById('device-id').value = device.id;
-                    document.getElementById('device_id').value = device.device_id || '';
-
-                    // Set mode
-                    if (device.mode === 'auto') {
-                        document.getElementById('mode-auto').checked = true;
-                    } else {
-                        document.getElementById('mode-manual').checked = true;
-                    }
-
-                    // Set manual_on
-                    document.getElementById('manual_on').checked = device.manual_on;
-
-                    // Show/hide manual control
-                    toggleManualControl();
-
-                    // Show delete section
-                    document.getElementById('delete-section').classList.remove('hidden');
-                    document.getElementById('delete-form').action = `/device-control/${device.id}`;
-
-                    // Scroll to form
-                    document.getElementById('form-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-        }
-
-        function resetForm() {
-            document.getElementById('form-title').textContent = 'Tambah Device Baru';
-            document.getElementById('device-id').value = '';
-            document.getElementById('device_id').value = '';
-            document.getElementById('mode-auto').checked = true;
-            document.getElementById('manual_on').checked = false;
-
-            toggleManualControl();
-            document.getElementById('delete-section').classList.add('hidden');
-        }
-
-        function toggleManualControl() {
-            const manualControl = document.getElementById('manual-control');
-            const modeManual = document.getElementById('mode-manual').checked;
-
-            if (modeManual) {
-                manualControl.classList.remove('hidden');
-            } else {
-                manualControl.classList.add('hidden');
-            }
-        }
-
-        function showDeleteModal() {
-            const deviceId = document.getElementById('device_id').value;
-            document.getElementById('modal-device-id').textContent = deviceId;
-            const modal = document.getElementById('delete-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function hideDeleteModal() {
-            const modal = document.getElementById('delete-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function confirmDelete() {
-            document.getElementById('delete-form').submit();
-        }
-
-        // Listen to mode changes
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('input[name="mode"]').forEach(radio => {
-                radio.addEventListener('change', toggleManualControl);
-            });
-
-            // Close modal when clicking outside
-            const modal = document.getElementById('delete-modal');
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    hideDeleteModal();
-                }
-            });
-        });
-    </script>
 </x-layouts::app>

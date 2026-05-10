@@ -13,7 +13,7 @@ class DashboardController extends Controller
     public function index()
     {
         $activeJadwal = Jadwal::where('aktif', true)->first();
-        $devices = DeviceControl::orderBy('device_id')->get();
+        $devices = DeviceControl::orderBy('id')->get();
 
         return view('dashboard', compact('activeJadwal', 'devices'));
     }
