@@ -13,7 +13,7 @@ class DeviceControlController extends Controller
      */
     public function index(): JsonResponse
     {
-        $devices = DeviceControl::orderBy('device_id')->get();
+        $devices = DeviceControl::orderBy('device_type')->get();
 
         return response()->json([
             'message' => 'Daftar device berhasil diambil',
@@ -27,9 +27,13 @@ class DeviceControlController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'device_id' => 'required|string|max:255|unique:device_controls,device_id',
+            'device_type' => 'required|string|max:255|unique:device_controls,device_type',
+            'name' => 'required|string|max:255',
             'mode' => 'required|in:auto,manual',
-            'manual_on' => 'boolean',
+            'speed' => 'nullable|integer|min:0|max:255',
+            'servo_angle' => 'nullable|integer|min:0|max:180',
+            'relay_state' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         $validatedData['last_heartbeat'] = now();
@@ -54,22 +58,21 @@ class DeviceControlController extends Controller
     }
 
     /**
-     * Update the specified device control.
+     * Update device configuration (for web form).
      */
-    public function update(Request $request, DeviceControl $deviceControl): JsonResponse
+    public function update(Request $request, DeviceControl $deviceControl)
     {
-        $validatedData = $request->validate([
-            'device_id' => 'nullable|string|max:255|unique:device_controls,device_id,'.$deviceControl->id,
+        $validated = $request->validate([
             'mode' => 'required|in:auto,manual',
-            'manual_on' => 'boolean',
+            'speed' => 'nullable|integer|min:0|max:255',
+            'servo_angle' => 'nullable|integer|min:0|max:180',
+            'relay_state' => 'boolean',
+            'calibration_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $deviceControl->update($validatedData);
+        $deviceControl->update($validated);
 
-        return response()->json([
-            'message' => 'Device berhasil diperbarui',
-            'data' => $deviceControl,
-        ]);
+        return redirect()->route('device.manage')->with('success', 'Konfigurasi device berhasil diperbarui!');
     }
 
     /**
@@ -94,100 +97,133 @@ class DeviceControlController extends Controller
      */
     public function manage()
     {
-        $deviceList = DeviceControl::orderBy('device_id')->get();
+        $devices = DeviceControl::orderBy('device_type')->get();
 
-        return view('device.manage', compact('deviceList'));
+        return view('device.manage', compact('devices'));
     }
 
     /**
-     * Upsert device control (create or update).
+     * Toggle device active status.
      */
-    public function upsert(Request $request)
+    public function toggleActive(DeviceControl $deviceControl)
     {
-        $validatedData = $request->validate([
-            'id' => 'nullable|exists:device_controls,id',
-            'device_id' => 'required|string|max:255',
-            'mode' => 'required|in:auto,manual',
-        ]);
+        $deviceControl->update(['is_active' => ! $deviceControl->is_active]);
 
-        $validatedData['manual_on'] = $request->has('manual_on');
-        $validatedData['last_heartbeat'] = now();
+        $status = $deviceControl->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
-        if ($request->filled('id')) {
-            $device = DeviceControl::findOrFail($request->id);
-            $device->update($validatedData);
-            $message = 'Device berhasil diperbarui!';
-        } else {
-            $existing = DeviceControl::where('device_id', $validatedData['device_id'])->first();
-            if ($existing) {
-                $existing->update($validatedData);
-                $message = 'Device berhasil diperbarui!';
-            } else {
-                DeviceControl::create($validatedData);
-                $message = 'Device berhasil dibuat!';
-            }
+        return redirect()->route('device.manage')->with('success', "{$deviceControl->name} berhasil {$status}!");
+    }
+
+    /**
+     * Start calibration for motor devices.
+     */
+    public function startCalibration(DeviceControl $deviceControl)
+    {
+        if (! $deviceControl->isMotor()) {
+            return redirect()->route('device.manage')->with('error', 'Kalibrasi hanya untuk device motor!');
         }
 
-        return redirect()->route('device.manage')->with('success', $message);
+        $deviceControl->update([
+            'current_position' => 0,
+            'calibration_percentage' => 0,
+        ]);
+
+        return redirect()->route('device.manage')->with('success', 'Kalibrasi dimulai. Jalankan device hingga titik maksimal.');
     }
 
     /**
-     * Get device by device_id for ESP32.
+     * Save calibration data.
+     */
+    public function saveCalibration(Request $request, DeviceControl $deviceControl)
+    {
+        if (! $deviceControl->isMotor()) {
+            return redirect()->route('device.manage')->with('error', 'Kalibrasi hanya untuk device motor!');
+        }
+
+        $validated = $request->validate([
+            'calibration_percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        if ($validated['calibration_percentage'] > 0) {
+            $maxSteps = (int) ($deviceControl->current_position / ($validated['calibration_percentage'] / 100));
+
+            $deviceControl->update([
+                'calibration_max_steps' => $maxSteps,
+                'calibration_percentage' => $validated['calibration_percentage'],
+            ]);
+
+            return redirect()->route('device.manage')->with('success', "Kalibrasi berhasil! Max steps: {$maxSteps}");
+        }
+
+        return redirect()->route('device.manage')->with('error', 'Persentase harus lebih dari 0!');
+    }
+
+    /**
+     * Get device by device_type (for ESP32).
      */
     public function getByDeviceId(string $deviceId): JsonResponse
     {
-        $device = DeviceControl::where('device_id', $deviceId)->first();
+        $device = DeviceControl::where('device_type', $deviceId)->first();
 
         if (! $device) {
             return response()->json([
-                'error' => 'Device not found',
-                'message' => "Device with ID '{$deviceId}' not found",
+                'message' => 'Device not found',
+                'data' => null,
             ], 404);
         }
 
         return response()->json([
-            'message' => 'Device retrieved',
+            'message' => 'Device retrieved successfully',
             'data' => $device,
         ]);
     }
 
     /**
-     * Update device status from ESP32.
+     * Update device heartbeat (for ESP32).
+     */
+    public function heartbeat(string $deviceId): JsonResponse
+    {
+        $device = DeviceControl::where('device_type', $deviceId)->first();
+
+        if (! $device) {
+            return response()->json([
+                'message' => 'Device not found',
+            ], 404);
+        }
+
+        $device->update(['last_heartbeat' => now()]);
+
+        return response()->json([
+            'message' => 'Heartbeat updated',
+            'data' => $device,
+        ]);
+    }
+
+    /**
+     * Update device status from ESP32 (for feedback).
      */
     public function updateStatus(Request $request, string $deviceId): JsonResponse
     {
-        $device = DeviceControl::where('device_id', $deviceId)->firstOrFail();
+        $device = DeviceControl::where('device_type', $deviceId)->first();
 
-        $validatedData = $request->validate([
-            'manual_on' => 'boolean',
+        if (! $device) {
+            return response()->json([
+                'message' => 'Device not found',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'current_position' => 'nullable|integer|min:0',
+            'relay_state' => 'nullable|boolean',
+            'servo_angle' => 'nullable|integer|min:0|max:180',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        $device->update([
-            'manual_on' => $validatedData['manual_on'] ?? $device->manual_on,
-            'last_heartbeat' => now(),
-        ]);
+        $device->update(array_merge($validated, ['last_heartbeat' => now()]));
 
         return response()->json([
             'message' => 'Device status updated',
             'data' => $device,
         ]);
-    }
-
-    /**
-     * Toggle manual device on/off.
-     */
-    public function toggleManual(Request $request, DeviceControl $deviceControl)
-    {
-        if ($deviceControl->mode !== 'manual') {
-            return back()->with('error', 'Device harus dalam mode manual untuk toggle ON/OFF!');
-        }
-
-        $deviceControl->update([
-            'manual_on' => !$deviceControl->manual_on,
-        ]);
-
-        $status = $deviceControl->manual_on ? 'ON' : 'OFF';
-
-        return back()->with('success', "Device {$deviceControl->device_id} berhasil di-{$status}!");
     }
 }
