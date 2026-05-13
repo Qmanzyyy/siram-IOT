@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\JadwalFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Jadwal extends Model
 {
-    /** @use HasFactory<\Database\Factories\JadwalFactory> */
+    /** @use HasFactory<JadwalFactory> */
     use HasFactory;
 
     /**
@@ -28,7 +29,10 @@ class Jadwal extends Model
         'waktu_aktif_kedua',
         'lama_operasi',
         'aktif',
+        'run_now',
+        'last_run_at',
         'hari',
+        'automation_flow',
     ];
 
     /**
@@ -40,6 +44,9 @@ class Jadwal extends Model
         'waktu_aktif_pertama' => 'datetime:H:i',
         'waktu_aktif_kedua' => 'datetime:H:i',
         'aktif' => 'boolean',
+        'run_now' => 'boolean',
+        'last_run_at' => 'datetime',
         'hari' => 'array',
+        'automation_flow' => 'array',
     ];
 }

@@ -8,7 +8,10 @@
       ],
       "autoApprove": [
         "last-error",
-        "database-query"
+        "database-query",
+        "database-schema",
+        "browser-logs",
+        "get-absolute-url"
       ]
     }
   }

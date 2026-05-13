@@ -128,7 +128,10 @@ class JadwalController extends Controller
     {
         $jadwalList = Jadwal::orderBy('nama')->get();
 
-        return view('jadwal.manage', compact('jadwalList'));
+        // Initialize empty flow for new jadwal
+        $flowStepsForRender = [];
+
+        return view('jadwal.manage', compact('jadwalList', 'flowStepsForRender'));
     }
 
     /**
@@ -164,11 +167,17 @@ class JadwalController extends Controller
             'lama_operasi' => 'required|integer|min:1',
             'hari' => 'nullable|array',
             'hari.*' => 'string|in:senin,selasa,rabu,kamis,jumat,sabtu,minggu',
+            'automation_flow' => 'nullable|json',
         ]);
 
         // Handle checkbox aktif - unchecked checkbox doesn't send value
         $validatedData['aktif'] = $request->has('aktif');
         $validatedData['hari'] = $request->input('hari', []);
+
+        // Parse automation_flow JSON
+        if (isset($validatedData['automation_flow'])) {
+            $validatedData['automation_flow'] = json_decode($validatedData['automation_flow'], true);
+        }
 
         // If this jadwal is being activated, deactivate all others
         if ($validatedData['aktif']) {
@@ -193,5 +202,18 @@ class JadwalController extends Controller
         }
 
         return redirect()->route('jadwal.manage')->with('success', $message);
+    }
+
+    /**
+     * Render flow builder canvas for AJAX requests.
+     */
+    public function renderFlow(Request $request)
+    {
+        $steps = [];
+        if ($request->has('steps')) {
+            $steps = json_decode(urldecode($request->steps), true) ?? [];
+        }
+
+        return view('components.flow-builder-canvas', ['steps' => $steps])->render();
     }
 }

@@ -13,6 +13,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Jadwal management page
     Route::get('kelola-jadwal', [JadwalController::class, 'manage'])->name('jadwal.manage');
     Route::post('kelola-jadwal', [JadwalController::class, 'upsert'])->name('jadwal.upsert');
+    Route::get('jadwal/render-flow', [JadwalController::class, 'renderFlow'])->name('jadwal.renderFlow');
+    Route::get('jadwal/{jadwal}', [JadwalController::class, 'show'])->name('jadwal.show');
+    Route::post('jadwal/{jadwal}/run-now', [JadwalController::class, 'toggleRunNow'])->name('jadwal.runNow');
     Route::delete('jadwal/{jadwal}', [JadwalController::class, 'destroy'])->name('jadwal.destroy');
 
     // Device Control management page

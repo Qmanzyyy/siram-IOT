@@ -1,0 +1,468 @@
+===========================================
+SMART FARM API - JSON RESPONSE STRUCTURE
+===========================================
+
+BASE URL: http://localhost:8000/api
+API KEY: PaniisApiKeyNesakti2026
+HEADER: X-API-Key: PaniisApiKeyNesakti2026
+
+===========================================
+JADWAL (SCHEDULE) ENDPOINTS
+===========================================
+
+1. GET /api/jadwal
+   Deskripsi: Mendapatkan semua jadwal penyiraman
+   Response:
+   {
+     "message": "Daftar jadwal berhasil diambil",
+     "data": [
+       {
+         "id": 2,
+         "nama": "Jadwal Penyiraman pertama",
+         "waktu_aktif_pertama": "08:00",
+         "waktu_aktif_kedua": "16:00",
+         "lama_operasi": 1,
+         "aktif": true,
+         "hari": ["senin", "minggu"],
+         "created_at": "2026-04-29T08:06:19.000000Z",
+         "updated_at": "2026-04-30T04:48:36.000000Z"
+       }
+     ]
+   }
+
+2. GET /api/jadwal/active
+   Deskripsi: Mendapatkan jadwal yang sedang aktif
+   Response (jika ada):
+   {
+     "message": "Active schedule retrieved",
+     "data": {
+       "id": 2,
+       "nama": "Jadwal Penyiraman pertama",
+       "waktu_aktif_pertama": "08:00",
+       "waktu_aktif_kedua": "16:00",
+       "lama_operasi": 1,
+       "aktif": true,
+       "hari": ["senin", "minggu"],
+       "created_at": "2026-04-29T08:06:19.000000Z",
+       "updated_at": "2026-04-30T04:48:36.000000Z"
+     }
+   }
+
+   Response (jika tidak ada):
+   {
+     "message": "No active schedule",
+     "data": null
+   }
+
+3. GET /api/jadwal/{id}
+   Deskripsi: Mendapatkan detail jadwal berdasarkan ID
+   Response:
+   {
+     "message": "Detail jadwal berhasil diambil",
+     "data": {
+       "id": 2,
+       "nama": "Jadwal Penyiraman pertama",
+       "waktu_aktif_pertama": "08:00",
+       "waktu_aktif_kedua": "16:00",
+       "lama_operasi": 1,
+       "aktif": true,
+       "hari": ["senin", "minggu"],
+       "created_at": "2026-04-29T08:06:19.000000Z",
+       "updated_at": "2026-04-30T04:48:36.000000Z"
+     }
+   }
+
+4. POST /api/jadwal
+   Deskripsi: Membuat jadwal baru
+   Request Body:
+   {
+     "nama": "Jadwal Sore",
+     "waktu_aktif_pertama": "17:00",
+     "waktu_aktif_kedua": "19:00",
+     "lama_operasi": 15,
+     "aktif": false,
+     "hari": ["senin", "rabu", "jumat"]
+   }
+
+   Response (201 Created):
+   {
+     "message": "Jadwal berhasil dibuat",
+     "data": {
+       "nama": "Jadwal Sore",
+       "waktu_aktif_pertama": "17:00",
+       "waktu_aktif_kedua": "19:00",
+       "lama_operasi": 15,
+       "aktif": false,
+       "hari": ["senin", "rabu", "jumat"],
+       "updated_at": "2026-05-11T00:23:21.000000Z",
+       "created_at": "2026-05-11T00:23:21.000000Z",
+       "id": 6
+     }
+   }
+
+5. PUT/PATCH /api/jadwal/{id}
+   Deskripsi: Update jadwal berdasarkan ID
+   Request Body:
+   {
+     "nama": "Jadwal Pagi Updated",
+     "waktu_aktif_pertama": "06:00",
+     "waktu_aktif_kedua": "18:00",
+     "lama_operasi": 20,
+     "aktif": true,
+     "hari": ["senin", "selasa", "rabu"]
+   }
+
+   Response:
+   {
+     "message": "Jadwal berhasil diperbarui",
+     "data": {
+       "id": 2,
+       "nama": "Jadwal Pagi Updated",
+       "waktu_aktif_pertama": "06:00",
+       "waktu_aktif_kedua": "18:00",
+       "lama_operasi": 20,
+       "aktif": true,
+       "hari": ["senin", "selasa", "rabu"],
+       "created_at": "2026-04-29T08:06:19.000000Z",
+       "updated_at": "2026-05-11T00:30:00.000000Z"
+     }
+   }
+
+===========================================
+DEVICE CONTROL ENDPOINTS
+===========================================
+
+6. GET /api/device-control
+   Deskripsi: Mendapatkan semua device
+   Response:
+   {
+     "message": "Daftar device berhasil diambil",
+     "data": [
+       {
+         "id": 2,
+         "device_type": "dinamo_x",
+         "name": "Dinamo Sumbu X",
+         "mode": "manual",
+         "calibration_max_steps": 1000,
+         "calibration_percentage": "0.00",
+         "speed": 128,
+         "servo_angle": null,
+         "relay_state": false,
+         "current_position": 500,
+         "is_active": true,
+         "last_heartbeat": "2026-05-11T00:23:39.000000Z",
+         "created_at": "2026-05-10T02:20:21.000000Z",
+         "updated_at": "2026-05-11T00:23:39.000000Z"
+       },
+       {
+         "id": 3,
+         "device_type": "dinamo_y",
+         "name": "Dinamo Sumbu Y",
+         "mode": "manual",
+         "calibration_max_steps": 1000,
+         "calibration_percentage": "0.00",
+         "speed": 128,
+         "servo_angle": null,
+         "relay_state": false,
+         "current_position": 0,
+         "is_active": false,
+         "last_heartbeat": null,
+         "created_at": "2026-05-10T02:20:21.000000Z",
+         "updated_at": "2026-05-11T03:36:01.000000Z"
+       },
+       {
+         "id": 4,
+         "device_type": "relay_pump",
+         "name": "Pompa Air",
+         "mode": "manual",
+         "calibration_max_steps": null,
+         "calibration_percentage": "0.00",
+         "speed": null,
+         "servo_angle": null,
+         "relay_state": false,
+         "current_position": 0,
+         "is_active": false,
+         "last_heartbeat": "2026-05-11T00:23:30.000000Z",
+         "created_at": "2026-05-10T02:20:21.000000Z",
+         "updated_at": "2026-05-11T00:23:30.000000Z"
+       },
+       {
+         "id": 5,
+         "device_type": "servo_nozzle",
+         "name": "Servo Nozzle",
+         "mode": "manual",
+         "calibration_max_steps": null,
+         "calibration_percentage": "0.00",
+         "speed": null,
+         "servo_angle": 45,
+         "relay_state": false,
+         "current_position": 0,
+         "is_active": false,
+         "last_heartbeat": "2026-05-11T00:23:47.000000Z",
+         "created_at": "2026-05-10T02:20:21.000000Z",
+         "updated_at": "2026-05-11T00:23:47.000000Z"
+       }
+     ]
+   }
+
+7. GET /api/device/{deviceId}
+   Deskripsi: Mendapatkan device berdasarkan device_type (dinamo_x, dinamo_y, relay_pump, servo_nozzle)
+   Response (jika ditemukan):
+   {
+     "message": "Device retrieved successfully",
+     "data": {
+       "id": 2,
+       "device_type": "dinamo_x",
+       "name": "Dinamo Sumbu X",
+       "mode": "manual",
+       "calibration_max_steps": 1000,
+       "calibration_percentage": "0.00",
+       "speed": 128,
+       "servo_angle": null,
+       "relay_state": false,
+       "current_position": 500,
+       "is_active": true,
+       "last_heartbeat": "2026-05-11T00:23:39.000000Z",
+       "created_at": "2026-05-10T02:20:21.000000Z",
+       "updated_at": "2026-05-11T00:23:39.000000Z"
+     }
+   }
+
+   Response (jika tidak ditemukan - 404):
+   {
+     "message": "Device not found",
+     "data": null
+   }
+
+8. GET /api/device-control/{id}
+   Deskripsi: Mendapatkan device berdasarkan ID
+   Response:
+   {
+     "message": "Detail device berhasil diambil",
+     "data": {
+       "id": 2,
+       "device_type": "dinamo_x",
+       "name": "Dinamo Sumbu X",
+       "mode": "manual",
+       "calibration_max_steps": 1000,
+       "calibration_percentage": "0.00",
+       "speed": 128,
+       "servo_angle": null,
+       "relay_state": false,
+       "current_position": 500,
+       "is_active": true,
+       "last_heartbeat": "2026-05-11T00:23:39.000000Z",
+       "created_at": "2026-05-10T02:20:21.000000Z",
+       "updated_at": "2026-05-11T00:23:39.000000Z"
+     }
+   }
+
+9. POST /api/device/{deviceId}/heartbeat
+   Deskripsi: Update heartbeat device (untuk ESP32 mengirim sinyal hidup)
+   Response (jika ditemukan):
+   {
+     "message": "Heartbeat updated",
+     "data": {
+       "id": 4,
+       "device_type": "relay_pump",
+       "name": "Pompa Air",
+       "mode": "manual",
+       "calibration_max_steps": null,
+       "calibration_percentage": "0.00",
+       "speed": null,
+       "servo_angle": null,
+       "relay_state": false,
+       "current_position": 0,
+       "is_active": false,
+       "last_heartbeat": "2026-05-11T00:23:30.000000Z",
+       "created_at": "2026-05-10T02:20:21.000000Z",
+       "updated_at": "2026-05-11T00:23:30.000000Z"
+     }
+   }
+
+   Response (jika tidak ditemukan - 404):
+   {
+     "message": "Device not found"
+   }
+
+10. POST /api/device/{deviceId}/status
+    Deskripsi: Update status device (posisi, relay state, servo angle, dll)
+    Request Body (untuk motor/dinamo):
+    {
+      "current_position": 500,
+      "is_active": true
+    }
+
+    Request Body (untuk servo):
+    {
+      "servo_angle": 45
+    }
+
+    Request Body (untuk relay):
+    {
+      "relay_state": true,
+      "is_active": true
+    }
+
+    Response (jika ditemukan):
+    {
+      "message": "Device status updated",
+      "data": {
+        "id": 2,
+        "device_type": "dinamo_x",
+        "name": "Dinamo Sumbu X",
+        "mode": "manual",
+        "calibration_max_steps": 1000,
+        "calibration_percentage": "0.00",
+        "speed": 128,
+        "servo_angle": null,
+        "relay_state": false,
+        "current_position": 500,
+        "is_active": true,
+        "last_heartbeat": "2026-05-11T00:23:39.000000Z",
+        "created_at": "2026-05-10T02:20:21.000000Z",
+        "updated_at": "2026-05-11T00:23:39.000000Z"
+      }
+    }
+
+    Response (jika tidak ditemukan - 404):
+    {
+      "message": "Device not found"
+    }
+
+11. POST /api/device-control
+    Deskripsi: Membuat device baru (tidak direkomendasikan karena device sudah fixed)
+    Request Body:
+    {
+      "device_type": "new_device",
+      "name": "Device Baru",
+      "mode": "manual",
+      "speed": 128,
+      "is_active": false
+    }
+
+    Response (201 Created):
+    {
+      "message": "Device berhasil dibuat",
+      "data": {
+        "device_type": "new_device",
+        "name": "Device Baru",
+        "mode": "manual",
+        "speed": 128,
+        "is_active": false,
+        "last_heartbeat": "2026-05-11T00:30:00.000000Z",
+        "updated_at": "2026-05-11T00:30:00.000000Z",
+        "created_at": "2026-05-11T00:30:00.000000Z",
+        "id": 6
+      }
+    }
+
+12. PUT/PATCH /api/device-control/{id}
+    Deskripsi: Update konfigurasi device berdasarkan ID
+    Request Body:
+    {
+      "mode": "auto",
+      "speed": 200,
+      "calibration_percentage": 50.5
+    }
+
+    Response:
+    {
+      "message": "Device berhasil diperbarui",
+      "data": {
+        "id": 2,
+        "device_type": "dinamo_x",
+        "name": "Dinamo Sumbu X",
+        "mode": "auto",
+        "calibration_max_steps": 1000,
+        "calibration_percentage": "50.50",
+        "speed": 200,
+        "servo_angle": null,
+        "relay_state": false,
+        "current_position": 500,
+        "is_active": true,
+        "last_heartbeat": "2026-05-11T00:23:39.000000Z",
+        "created_at": "2026-05-10T02:20:21.000000Z",
+        "updated_at": "2026-05-11T00:35:00.000000Z"
+      }
+    }
+
+===========================================
+ERROR RESPONSES
+===========================================
+
+401 Unauthorized (API Key salah/tidak ada):
+{
+  "error": "Unauthorized",
+  "message": "Invalid or missing API key"
+}
+
+404 Not Found:
+{
+  "message": "Device not found",
+  "data": null
+}
+
+422 Validation Error:
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "nama": ["The nama field is required."],
+    "waktu_aktif_pertama": ["The waktu aktif pertama field is required."]
+  }
+}
+
+===========================================
+DEVICE TYPES
+===========================================
+
+1. dinamo_x - Dinamo Sumbu X (Motor)
+   Fields: speed, current_position, calibration_max_steps, calibration_percentage
+
+2. dinamo_y - Dinamo Sumbu Y (Motor)
+   Fields: speed, current_position, calibration_max_steps, calibration_percentage
+
+3. relay_pump - Pompa Air (Relay)
+   Fields: relay_state (true/false)
+
+4. servo_nozzle - Servo Nozzle (Servo)
+   Fields: servo_angle (0-180)
+
+===========================================
+FIELD DESCRIPTIONS
+===========================================
+
+JADWAL:
+- id: ID jadwal
+- nama: Nama jadwal
+- waktu_aktif_pertama: Waktu aktif pertama (format HH:mm)
+- waktu_aktif_kedua: Waktu aktif kedua (format HH:mm, nullable)
+- lama_operasi: Durasi operasi dalam menit
+- aktif: Status aktif jadwal (true/false)
+- hari: Array hari aktif ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"]
+
+DEVICE:
+- id: ID device
+- device_type: Tipe device (dinamo_x, dinamo_y, relay_pump, servo_nozzle)
+- name: Nama device
+- mode: Mode operasi (manual/auto)
+- calibration_max_steps: Maksimal steps untuk kalibrasi (motor only)
+- calibration_percentage: Persentase posisi kalibrasi (0-100)
+- speed: Kecepatan motor PWM (0-255, motor only)
+- servo_angle: Sudut servo (0-180, servo only)
+- relay_state: Status relay (true/false, relay only)
+- current_position: Posisi saat ini dalam steps (motor only)
+- is_active: Status aktif device (true/false)
+- last_heartbeat: Waktu terakhir heartbeat dari ESP32
+
+===========================================
+NOTES
+===========================================
+
+1. Semua endpoint memerlukan header X-API-Key dengan value: PaniisApiKeyNesakti2026
+2. Content-Type: application/json untuk semua request
+3. Accept: application/json untuk semua request
+4. Timestamp menggunakan format ISO 8601 (UTC)
+5. Device sudah fixed (4 device), tidak perlu create/delete device
+6. Hanya 1 jadwal yang bisa aktif pada satu waktu
+7. Field yang nullable akan bernilai null jika tidak digunakan

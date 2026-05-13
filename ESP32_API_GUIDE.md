@@ -34,10 +34,27 @@ Response jika ada jadwal aktif:
     "waktu_aktif_kedua": "18:00:00",
     "lama_operasi": 30,
     "aktif": true,
-    "hari": ["senin", "selasa", "rabu", "kamis", "jumat"]
+    "run_now": false,
+    "last_run_at": null,
+    "hari": ["senin", "selasa", "rabu", "kamis", "jumat"],
+    "automation_flow": [
+      {
+        "device": "dinamo_x",
+        "position": 50,
+        "speed": 128,
+        "pump": true,
+        "duration": 10
+      }
+    ]
   }
 }
 ```
+
+**PENTING - Run Now Mode:**
+- `run_now: true` = Jalankan SEKARANG, abaikan waktu terjadwal
+- `run_now: false` = Mode normal, ikuti `waktu_aktif_pertama` dan `waktu_aktif_kedua`
+- `last_run_at` = Timestamp terakhir kali dijalankan (untuk tracking)
+- `automation_flow` = Array berisi langkah-langkah otomatis yang harus dijalankan
 
 Response jika tidak ada:
 ```json
@@ -157,29 +174,77 @@ void setup() {
 }
 
 void loop() {
-  // 1. Get device settings
-  String deviceSettings = getDeviceSettings();
+  // 1. Get active schedule
+  String scheduleJson = getActiveSchedule();
   
   // 2. Parse JSON
-  StaticJsonDocument<512> doc;
-  deserializeJson(doc, deviceSettings);
+  StaticJsonDocument<1024> doc;
+  deserializeJson(doc, scheduleJson);
   
-  String mode = doc["data"]["mode"];
-  bool manualOn = doc["data"]["manual_on"];
-  
-  if (mode == "auto") {
-    // Get active schedule
-    String schedule = getActiveSchedule();
-    // Implement auto logic based on schedule
-  } else if (mode == "manual") {
-    // Control based on manual_on
-    digitalWrite(RELAY_PIN, manualOn ? HIGH : LOW);
+  if (doc["data"].isNull()) {
+    Serial.println("No active schedule");
+    delay(60000); // Check again in 1 minute
+    return;
   }
   
-  // 3. Send heartbeat every 5 minutes
+  // 3. Check run_now mode
+  bool runNow = doc["data"]["run_now"];
+  String waktuPertama = doc["data"]["waktu_aktif_pertama"];
+  String waktuKedua = doc["data"]["waktu_aktif_kedua"];
+  int lamaOperasi = doc["data"]["lama_operasi"];
+  
+  if (runNow) {
+    // RUN NOW MODE: Execute immediately
+    Serial.println("Run Now mode active - executing immediately");
+    executeAutomationFlow(doc["data"]["automation_flow"]);
+  } else {
+    // SCHEDULED MODE: Check current time
+    String currentTime = getCurrentTime(); // Format: "HH:MM:SS"
+    
+    if (currentTime == waktuPertama || currentTime == waktuKedua) {
+      Serial.println("Scheduled time reached - executing");
+      executeAutomationFlow(doc["data"]["automation_flow"]);
+    }
+  }
+  
+  // 4. Send heartbeat every 5 minutes
   sendHeartbeat();
   
-  delay(300000); // 5 minutes
+  delay(60000); // Check every 1 minute
+}
+
+void executeAutomationFlow(JsonArray flow) {
+  for (JsonObject step : flow) {
+    String device = step["device"];
+    
+    if (device == "dinamo_x" || device == "dinamo_y") {
+      int position = step["position"];
+      int speed = step["speed"];
+      bool pump = step["pump"];
+      int duration = step["duration"];
+      
+      // Move motor to position with speed
+      moveMotor(device, position, speed);
+      // Control pump
+      digitalWrite(PUMP_PIN, pump ? HIGH : LOW);
+      // Wait duration
+      delay(duration * 1000);
+      
+    } else if (device == "relay_pump") {
+      bool relayState = step["relay_state"];
+      int duration = step["duration"];
+      
+      digitalWrite(PUMP_PIN, relayState ? HIGH : LOW);
+      delay(duration * 1000);
+      
+    } else if (device == "servo_nozzle") {
+      int angle = step["servo_angle"];
+      int duration = step["duration"];
+      
+      servoNozzle.write(angle);
+      delay(duration * 1000);
+    }
+  }
 }
 
 String getDeviceSettings() {
@@ -244,10 +309,33 @@ curl -X POST http://localhost:8000/api/device/pompa_01/status \
 
 - **Limit:** 12 request per menit per IP
 - **Rekomendasi:** 
+  - Check schedule: setiap 1 menit (1 request)
   - Heartbeat: setiap 5 menit (1 request)
-  - Get settings: setiap 5 menit (1 request)
-  - Get schedule: setiap 5 menit (1 request)
-  - Total: 3 request per 5 menit = aman
+  - Total: ~6 request per 5 menit = aman
+
+## Run Now Feature - User Experience
+
+Fitur "Run Now" memberikan pengalaman baru untuk pengguna:
+
+1. **Toggle Switch** - Switch di sidebar jadwal untuk mengaktifkan/nonaktifkan run now
+2. **Visual Feedback** - Badge "Run Now" dengan ikon petir muncul saat aktif
+3. **Last Run Tracking** - Menampilkan "Terakhir dijalankan: X menit yang lalu"
+4. **Instant Execution** - ESP32 akan langsung menjalankan jadwal tanpa menunggu waktu terjadwal
+5. **Flexible Control** - Bisa diaktifkan/nonaktifkan kapan saja dari web interface
+
+### Logika ESP32 untuk Run Now:
+
+```cpp
+if (runNow) {
+  // Jalankan SEKARANG, abaikan waktu
+  executeAutomationFlow();
+} else {
+  // Cek apakah waktu sekarang = waktu terjadwal
+  if (currentTime == scheduledTime) {
+    executeAutomationFlow();
+  }
+}
+```
 
 ## Security Best Practices
 
