@@ -8,7 +8,8 @@
       ],
       "autoApprove": [
         "last-error",
-        "database-query"
+        "database-query",
+        "database-schema"
       ]
     }
   }
